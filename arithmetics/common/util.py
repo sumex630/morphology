@@ -34,9 +34,9 @@ def optimize_morghology(single_frame):
     frame_parsed = cv2.morphologyEx(single_frame, cv2.MORPH_OPEN, kernel, iterations=1)
     frame_parsed = cv2.morphologyEx(frame_parsed, cv2.MORPH_CLOSE, kernel, iterations=3)
 
-    thresh = cv2.threshold(frame_parsed, 127, 255, cv2.THRESH_BINARY)[1]
+    # thresh = cv2.threshold(frame_parsed, 127, 255, cv2.THRESH_BINARY)[1]
 
-    return thresh
+    return frame_parsed
 
 
 def optimize_median(single_frame):
@@ -46,9 +46,9 @@ def optimize_median(single_frame):
     :return:
     """
     blur = cv2.medianBlur(single_frame, 3)  # 中值滤波
-    thresh = cv2.threshold(blur, 127, 255, cv2.THRESH_BINARY)[1]  # 阈值处理
+    # thresh = cv2.threshold(blur, 127, 255, cv2.THRESH_BINARY)[1]  # 阈值处理
 
-    return thresh
+    return blur
 
 
 def get_input_path(dataset_rootpath):
