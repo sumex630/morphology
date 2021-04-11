@@ -8,6 +8,7 @@
 @brief: 统计: 对算法预测的结果与真实标注结果作对比
 """
 import os
+from pprint import pprint
 
 import cv2
 import numpy as np
@@ -38,9 +39,22 @@ def load_img(path, start, end):
         file_path = os.path.join(path, filename)
         # print(file_path)
         img = cv2.imread(file_path, 0)
-        retval, thresh = cv2.threshold(img, 200, 255, cv2.THRESH_BINARY)  # 二值化
+        retval, thresh = cv2.threshold(img, 200, 1, cv2.THRESH_BINARY)  # 二值化
         image_set.append(thresh)
     return image_set
+
+
+def load_img2(path):
+    """
+    加载图片，返回灰度二值化图片
+    :param path:
+    :return:
+    """
+    img = cv2.imread(path)
+    gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    retval, thresh = cv2.threshold(gray_img, 200, 255, cv2.THRESH_BINARY)  # 二值化
+
+    return thresh
 
 
 def get_video_info(path):
@@ -138,40 +152,73 @@ def get_cm_name(video_path_pred):
     return '_'.join(cat_video)
 
 
-def compare_with_groungtruth(video_path, video_path_pred):
+def compute_cm_frame(y_ture, y_pred):
+    """
+    计算每帧的混淆矩阵
+    :param y_ture:
+    :param y_pred:
+    :return:
+    """
+    ture_and_pred = cv2.bitwise_and(y_ture, y_pred)  # 与 -- TP（1 的个数）
+    ture_or_pred = cv2.bitwise_or(y_ture, y_pred)  # 或 -- TN （0 的个数）
+    ture_not = cv2.bitwise_not(y_ture)  # 对 y_ture 取非
+    ture_not_and_pred = cv2.bitwise_and(ture_not, y_pred)  # FP （1 的个数）
+    ture_not_or_pred = cv2.bitwise_or(ture_not, y_pred)  # FN （0 的个数）
+
+    tp = (ture_and_pred.reshape(-1) == 255).sum()
+    fn = (ture_not_or_pred.reshape(-1) == 0).sum()
+    fp = (ture_not_and_pred.reshape(-1) == 255).sum()
+    tn = (ture_or_pred.reshape(-1) == 0).sum()
+
+    return [tp, fn, fp, tn]
+
+
+def compare_with_groungtruth(y_ture_path, y_pred_path):
     """
     求混淆矩阵
-    :param video_path_pred:
-    :param gt_path:
+    :param y_pred_path:
+    :param y_ture_path:
     :return:
     """
     cm_dict = {}
+    cm = np.array([0, 0, 0, 0])
 
-    vaild_frames = get_temporalROI(video_path)  # 有效帧范围
+    vaild_frames = get_temporalROI(y_ture_path)  # 有效帧范围
     start_frame_id = int(vaild_frames[0])  # 起始帧号
     end_frame_id = int(vaild_frames[1])  # 结束帧号
+    # print(start_frame_id)
 
-    gt_path = os.path.join(video_path, 'groundtruth')  # 基准结果路径
+    gt_path = os.path.join(y_ture_path, 'groundtruth')  # 基准结果路径
     # 加载gt img
-    gt_img = load_img(gt_path, start_frame_id, end_frame_id)
+    # gt_img = load_img(gt_path, start_frame_id, end_frame_id)
+    # res_img = load_img(y_pred_path, start_frame_id, end_frame_id)
 
-    # for video_path_pred in video_path_preds:
-    # 加载results img
-    # print("====", video_path_pred)
-    res_img = load_img(video_path_pred, start_frame_id, end_frame_id)
+    gt_file_names = os.listdir(gt_path)
+    res_file_names = os.listdir(y_pred_path)
+    for i in range(2):  # end_frame_id - start_frame_id +
+        gt_file_name = gt_file_names[start_frame_id + i - 1]
+        res_file_name = res_file_names[start_frame_id + i - 1]
+        # 每帧的基准路径
+        gt_file_path = os.path.join(gt_path, gt_file_name)
+        # 每帧的结果路径
+        res_file_path = os.path.join(y_pred_path, res_file_name)
+        # 加载图片
+        gt_frame = load_img2(gt_file_path)
+        res_frame = load_img2(res_file_path)
 
-    gt_1_dim = np.array(gt_img).reshape(-1)  # y_true
-    res_1_dim = np.array(res_img).reshape(-1)  # y_pre
-    confusion_mat = confusion_matrix(gt_1_dim, res_1_dim, labels=[255, 0]).ravel()  # 混淆矩阵
-    # print("confusion_mat", confusion_mat)
+        # 计算每帧的混淆矩阵
+        cm_frame = compute_cm_frame(gt_frame,res_frame)
+        cm += cm_frame
 
-    cm_name = get_cm_name(video_path_pred)
-    cm_dict[cm_name] = confusion_mat
+    cm_name = get_cm_name(y_pred_path)
+    cm_dict[cm_name] = cm
 
+    pprint(cm_dict)
     return cm_dict
 
 
 if __name__ == '__main__':
-    DATASETROOT = ''
-    RESULTSROOT = ''
-    main(DATASETROOT, RESULTSROOT)
+    # DATASETROOT = ''
+    # RESULTSROOT = ''
+    # main(DATASETROOT, RESULTSROOT)
+    compare_with_groungtruth('../dataset/baseline/baseline/highway', '../results/gmm_thresh/gmm_thresh/baseline/highway')

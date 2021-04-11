@@ -39,4 +39,4 @@ def get_directories(path):
 
 if __name__ == '__main__':
     ROOTPATH = '../dataset'
-    get_input_path(ROOTPATH)
+    # get_input_path(ROOTPATH)
