@@ -195,7 +195,7 @@ def compare_with_groungtruth(y_ture_path, y_pred_path):
 
     gt_file_names = os.listdir(gt_path)
     res_file_names = os.listdir(y_pred_path)
-    for i in range(2):  # end_frame_id - start_frame_id +
+    for i in range(end_frame_id - start_frame_id + 1):  # end_frame_id - start_frame_id +
         gt_file_name = gt_file_names[start_frame_id + i - 1]
         res_file_name = res_file_names[start_frame_id + i - 1]
         # 每帧的基准路径
@@ -210,15 +210,15 @@ def compare_with_groungtruth(y_ture_path, y_pred_path):
         cm_frame = compute_cm_frame(gt_frame,res_frame)
         cm += cm_frame
 
-    cm_name = get_cm_name(y_pred_path)
-    cm_dict[cm_name] = cm
-
-    pprint(cm_dict)
-    return cm_dict
+    # cm_name = get_cm_name(y_pred_path)
+    # cm_dict[cm_name] = cm
+    #
+    # # pprint(cm_dict)
+    return cm
 
 
 if __name__ == '__main__':
-    # DATASETROOT = ''
-    # RESULTSROOT = ''
+    DATASETROOT = 'F:/Pycharm/01_CV/20210331_GMM/dataset/baseline/baseline/highway'
+    RESULTSROOT = 'F:/Pycharm/01_CV/20210331_GMM/results/baseline/highway'
     # main(DATASETROOT, RESULTSROOT)
-    compare_with_groungtruth('../dataset/baseline/baseline/highway', '../results/gmm_thresh/gmm_thresh/baseline/highway')
+    compare_with_groungtruth(DATASETROOT, RESULTSROOT)

@@ -14,18 +14,17 @@ from pprint import pprint
 import cv2
 
 from arithmetics.common.process_folder_for_save import folder_for_save
-from arithmetics.common.util import save_img, optimize_morghology, optimize_median, get_input_path, save_execute_time, \
-    print_execute_time
+from arithmetics.common.util import save_img, optimize_morghology, optimize_median, get_input_path, save_execute_time
 
 
 def gmm():
     median_time = 0
     morghology_time = 0
     # 构造高斯混合模型
-    model = cv2.createBackgroundSubtractorMOG2(varThreshold=30, detectShadows=False)
+    model = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
 
-    model.setNMixtures(4)  # 设置混合高斯的个数
-    model.setBackgroundRatio(0.75)
+    # model.setNMixtures(4)  # 设置混合高斯的个数
+    # model.setBackgroundRatio(0.75)
     # 只读参数，默认是0.9，高斯背景模型权重和阈值，nmixtures个模型按权重排序后，
     # 只取模型权重累加值大于backgroundRatio的前几个作为背景模型。也就是说如果该值取得非常小，
 
@@ -36,7 +35,7 @@ def gmm():
         # 以灰度图的形式读取
         frame = cv2.imread(file_path)
         # learningRate 学习速率，值为0-1,为0时背景不更新，为1时逐帧更新，默认为-1，即算法自动更新；
-        fgmask = model.apply(frame, learningRate=-1)
+        fgmask = model.apply(frame, learningRate=0.1)
 
         # if flag == algorithm_type:
         fgmask = cv2.threshold(fgmask, 127, 255, cv2.THRESH_BINARY)[1]
@@ -59,7 +58,7 @@ def gmm():
         save_img(median_frame, save_path_dict['median'] + '/%s%06d.jpg' % ('median', i + 1))
 
     # 统计时间入档
-    cat_video_l = input_path.split('\\')[-3:-1]  # 类名_视频名_?  # [类别，视频名称，方法]
+    cat_video_l = input_path.split('\\')[-3:-1]  # 类名_视频名_?  [类别，视频名称，方法]
     cat_video = "_".join(cat_video_l)
     text_time = """%s: %.3f \n%s: %.3f \n""" %(cat_video + '_morghology', morghology_time, cat_video + '_median', median_time)  # 文件内容
     # print(text_time)
@@ -70,14 +69,16 @@ def gmm():
 
 if __name__ == '__main__':
     ROOTPATH = '../dataset'
-    stats_time_path = '../time/stats_time_gmm_thresh.txt'
+    algorithm_type = 'gmm_lr=0.1'
     input_path_list = get_input_path(ROOTPATH)
-    algorithm_type = 'gmm_thresh'
+    stats_time_path = '../time/stats_time_{}.txt'.format(algorithm_type)
     processing_methods = [algorithm_type, 'morghology', 'median']
     for input_path in input_path_list:
-        print(input_path)
-        # 保存结果的路径
-        save_path_dict = folder_for_save(input_path, algorithm_type, processing_methods)
-        gmm()  # 算法入口
+        if input_path.split('\\')[-3] == 'dynamicBackground':
+            print(input_path)
+            # 保存结果的路径
+            save_path_dict = folder_for_save(input_path, algorithm_type, processing_methods)
+            # 算法入口
+            gmm()
 
 

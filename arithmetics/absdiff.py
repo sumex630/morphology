@@ -39,6 +39,8 @@ def absdiff():
 
         # 计算当前帧与前一帧的差值的绝对值
         fgmask = cv2.absdiff(gray, pre_gray)
+        pre_gray = gray
+
         fgmask = cv2.threshold(fgmask, 30, 255, cv2.THRESH_BINARY)[1]
 
         # if flag == 'median':
@@ -74,9 +76,9 @@ def absdiff():
 
 if __name__ == '__main__':
     ROOTPATH = '../dataset'
-    stats_time_path = '../time/stats_time_absdiff.txt'
     input_path_list = get_input_path(ROOTPATH)
-    algorithm_type = 'absdiff'
+    algorithm_type = 'absdiff_2'
+    stats_time_path = '../time/stats_time_{}.txt'.format(algorithm_type)
     processing_methods = [algorithm_type, 'morghology', 'median']
     for input_path in input_path_list:
         print(input_path)

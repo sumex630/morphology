@@ -49,12 +49,12 @@ def process_folder(dataset_root, results_root, arithmetic):
                 process_method_ = video_path_pred.replace('\\', '/').split('/')[-3]
 
                 print('{}__{}__{} 计算混淆矩阵中...'.format(category, video, process_method_))
-                confusion_matrix_dict = compare_with_groungtruth(video_path, video_path_pred)
+                # confusion_matrix_dict = compare_with_groungtruth(video_path, video_path_pred)
+                confusion_matrix = compare_with_groungtruth(video_path, video_path_pred)
                 # pprint(confusion_matrix_dict)
                 cm_name = get_cm_name(video_path_pred)
                 # print(process_method_)
-
-                confusion_matrix = confusion_matrix_dict[cm_name]
+                # confusion_matrix = confusion_matrix_dict[cm_name]
                 stats_dict = get_stats(confusion_matrix)
                 # 加入 分辨率，总帧数，起始帧，结束帧，有效帧
                 video_info_dict = get_video_info(video_path)
@@ -99,5 +99,5 @@ def get_directories(path):
 if __name__ == '__main__':
     DATASETROOT = '../dataset'
     RESULTSROOT = '../results'
-    arithmetic = 'gmm'
+    arithmetic = 'knn'
     process_folder(DATASETROOT, RESULTSROOT, arithmetic)
