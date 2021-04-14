@@ -13,6 +13,8 @@ from pprint import pprint
 
 import cv2
 
+from morphology.arithmetics.common.process_folder_for_save import list2path, create_dir_is_exist
+
 
 def save_img(frame, path):
     """
@@ -105,6 +107,11 @@ def save_execute_time(filename_path, txt):
     :param txt:
     :return:
     """
+    filename_list = filename_path.replace('\\', '/').split('/')[:-1]
+    fp = list2path(filename_list)
+    create_dir_is_exist(fp)  # 文件夹是否存在，若不存在则创建
+    # print(fp)
+
     with open(filename_path, 'a') as f:
         f.write(txt + '\n')
 

@@ -9,12 +9,11 @@
 """
 import os
 import time
-from pprint import pprint
 
 import cv2
 
-from arithmetics.common.process_folder_for_save import folder_for_save
-from arithmetics.common.util import save_img, optimize_morghology, optimize_median, get_input_path, save_execute_time
+from morphology.arithmetics.common.process_folder_for_save import folder_for_save
+from morphology.arithmetics.common.util import save_img, optimize_morghology, optimize_median, get_input_path, save_execute_time
 
 
 def absdiff():
@@ -75,7 +74,7 @@ def absdiff():
 
 
 if __name__ == '__main__':
-    ROOTPATH = '../dataset'
+    ROOTPATH = '../../dataset'
     input_path_list = get_input_path(ROOTPATH)
     algorithm_type = 'absdiff_2'
     stats_time_path = '../time/stats_time_{}.txt'.format(algorithm_type)

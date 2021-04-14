@@ -4,25 +4,23 @@
 @author: sumex
 @software: PyCharm
 @time: 2021/4/9 15:59
-@file: gmm.py
-@brief: 
+@file: knn.py
+@brief: MOG
 """
 import os
 import time
-from pprint import pprint
 
 import cv2
 
-from arithmetics.common.process_folder_for_save import folder_for_save
-from arithmetics.common.util import save_img, optimize_morghology, optimize_median, get_input_path, save_execute_time
+from morphology.arithmetics.common.process_folder_for_save import folder_for_save
+from morphology.arithmetics.common.util import save_img, optimize_morghology, optimize_median, get_input_path, save_execute_time
 
 
 def gmm():
     median_time = 0
     morghology_time = 0
     # 构造高斯混合模型
-    model = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
-
+    model = cv2.createBackgroundSubtractorKNN(detectShadows=False)
     # model.setNMixtures(4)  # 设置混合高斯的个数
     # model.setBackgroundRatio(0.75)
     # 只读参数，默认是0.9，高斯背景模型权重和阈值，nmixtures个模型按权重排序后，
@@ -35,7 +33,7 @@ def gmm():
         # 以灰度图的形式读取
         frame = cv2.imread(file_path)
         # learningRate 学习速率，值为0-1,为0时背景不更新，为1时逐帧更新，默认为-1，即算法自动更新；
-        fgmask = model.apply(frame, learningRate=0.1)
+        fgmask = model.apply(frame, learningRate=-1)
 
         # if flag == algorithm_type:
         fgmask = cv2.threshold(fgmask, 127, 255, cv2.THRESH_BINARY)[1]
@@ -69,16 +67,16 @@ def gmm():
 
 if __name__ == '__main__':
     ROOTPATH = '../dataset'
-    algorithm_type = 'gmm_lr=0.1'
+    algorithm_type = 'knn'
     input_path_list = get_input_path(ROOTPATH)
     stats_time_path = '../time/stats_time_{}.txt'.format(algorithm_type)
     processing_methods = [algorithm_type, 'morghology', 'median']
     for input_path in input_path_list:
-        if input_path.split('\\')[-3] == 'dynamicBackground':
-            print(input_path)
-            # 保存结果的路径
-            save_path_dict = folder_for_save(input_path, algorithm_type, processing_methods)
-            # 算法入口
-            gmm()
+        # if input_path.split('\\')[-3] == 'dynamicBackground':
+        print(input_path)
+        # 保存结果的路径
+        save_path_dict = folder_for_save(input_path, algorithm_type, processing_methods)
+        # 算法入口
+        gmm()
 
 

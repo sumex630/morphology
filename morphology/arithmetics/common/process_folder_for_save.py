@@ -80,7 +80,7 @@ def list2path(path_list):
 
 
 if __name__ == '__main__':
-    PATH_ROOT = '../../dataset/baseline/baseline/highway/input'
+    PATH_ROOT = '../../../dataset/baseline/baseline/highway/input'
     # start_time = time.time()
     # create_dir_is_exist(PATH_ROOT)
 

@@ -12,6 +12,8 @@ from pprint import pprint
 from time import time
 
 import pandas as pd
+
+from morphology.arithmetics.common.process_folder_for_save import list2path, create_dir_is_exist
 from stats import compare_with_groungtruth, get_stats, get_cm_name, get_temporalROI, get_video_info
 
 
@@ -63,8 +65,12 @@ def process_folder(dataset_root, results_root, arithmetic):
                 stats_dict.update(video_info_dict)
 
                 # 写入
-                save_path = "../stats_results/{}_{}.csv".format(arithmetic, process_method_)
+                save_path = "../../results_stats/{}_{}.csv".format(arithmetic, process_method_)
                 df1 = pd.DataFrame(stats_dict, index=[cm_name])
+
+                filename_list = save_path.replace('\\', '/').split('/')[:-1]
+                fp = list2path(filename_list)
+                create_dir_is_exist(fp)  # 文件夹是否存在，若不存在则创建
                 df1.to_csv(save_path, mode='a', header=False)
 
 
@@ -97,7 +103,7 @@ def get_directories(path):
 
 
 if __name__ == '__main__':
-    DATASETROOT = '../dataset'
-    RESULTSROOT = '../results'
-    arithmetic = 'knn'
+    DATASETROOT = '../../dataset'
+    RESULTSROOT = '../../results'
+    arithmetic = 'gmm_lr=0.005'
     process_folder(DATASETROOT, RESULTSROOT, arithmetic)

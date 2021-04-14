@@ -5,12 +5,12 @@
 @software: PyCharm
 @time: 2021/3/31 19:06
 @file: img2video.py
+将图片转为视频
 """
 import os
 import cv2
-import numpy as np
 
-from arithmetics.common.util import get_directories
+from morphology.arithmetics.common.util import get_directories
 
 
 def load_data_set(path):
@@ -36,7 +36,7 @@ def load_data_set(path):
 
 
 if __name__ == '__main__':
-    path = '../dataset/dynamicBackground/dynamicBackground'
+    path = '../../dataset/dynamicBackground/dynamicBackground'
     for video in get_directories(path):
         print(video)
         video_path = os.path.join(path, video, 'input')
@@ -47,7 +47,7 @@ if __name__ == '__main__':
         width = img_shape[1]
         print(img_shape)
 
-        video_write = cv2.VideoWriter('../img2video/input/{}.avi'.format(video),
+        video_write = cv2.VideoWriter('../../video/input/{}.avi'.format(video),
                                       cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'),  # 'P', 'I', 'M', '1'
                                       30, (width, height),
                                       True)  # 240, 320

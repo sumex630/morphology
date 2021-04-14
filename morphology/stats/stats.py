@@ -131,13 +131,13 @@ def get_stats(cm):
     precision = TP / (TP + FP)
     fmeasure = 2.0 * (recall * precision) / (recall + precision)
 
-    stats_dic = {'Recall': round(recall, 2),
-                 'Precision': round(precision, 2),
-                 'FMeasure': round(fmeasure, 2),
-                 'Specificity': round(specficity, 2),
-                 'FPR': round(fpr, 2),
-                 'FNR': round(fnr, 2),
-                 'PWC': round(pbc, 2)}
+    stats_dic = {'Recall': recall,
+                 'Precision': precision,
+                 'FMeasure': fmeasure,
+                 'Specificity': specficity,
+                 'FPR': fpr,
+                 'FNR': fnr,
+                 'PWC': pbc}
 
     return stats_dic
 
