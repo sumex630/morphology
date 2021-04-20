@@ -21,7 +21,7 @@ def gmm():
     median_time = 0
     morghology_time = 0
     # 构造高斯混合模型
-    model = cv2.createBackgroundSubtractorMOG2(varThreshold=30, detectShadows=False)
+    model = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
 
     # model.setNMixtures(4)  # 设置混合高斯的个数
     # model.setBackgroundRatio(0.75)
@@ -35,7 +35,7 @@ def gmm():
         # 以灰度图的形式读取
         frame = cv2.imread(file_path)
         # learningRate 学习速率，值为0-1,为0时背景不更新，为1时逐帧更新，默认为-1，即算法自动更新；
-        fgmask = model.apply(frame, learningRate=0.005)
+        fgmask = model.apply(frame, learningRate=-1)
 
         # if flag == algorithm_type:
         fgmask = cv2.threshold(fgmask, 127, 255, cv2.THRESH_BINARY)[1]
@@ -69,7 +69,7 @@ def gmm():
 
 if __name__ == '__main__':
     ROOTPATH = '../../dataset'
-    algorithm_type = 'gmm_lr=0.005'
+    algorithm_type = 'gmm_lr_def_kel=3_varT=def_iter=3'
     input_path_list = get_input_path(ROOTPATH)
     stats_time_path = '../../results_time/stats_time_{}.txt'.format(algorithm_type)
     processing_methods = [algorithm_type, 'morghology', 'median']
