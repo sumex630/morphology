@@ -35,7 +35,7 @@ def gmm():
         # 以灰度图的形式读取
         frame = cv2.imread(file_path)
         # learningRate 学习速率，值为0-1,为0时背景不更新，为1时逐帧更新，默认为-1，即算法自动更新；
-        fgmask = model.apply(frame, learningRate=-1)
+        fgmask = model.apply(frame, learningRate=0.005)
 
         # if flag == algorithm_type:
         fgmask = cv2.threshold(fgmask, 127, 255, cv2.THRESH_BINARY)[1]
@@ -60,7 +60,8 @@ def gmm():
     # 统计时间入档
     cat_video_l = input_path.split('\\')[-3:-1]  # 类名_视频名_?  [类别，视频名称，方法]
     cat_video = "_".join(cat_video_l)
-    text_time = """%s: %f \n%s: %f \n""" %(cat_video + '_morghology', morghology_time, cat_video + '_median', median_time)  # 文件内容
+    # text_time = """%s: %f \n%s: %f \n""" %(cat_video + '_morghology', morghology_time, cat_video + '_median', median_time)  # 文件内容
+    text_time = """%s: %f \n%s: %f \n""" %(cat_video + '_morghology', morghology_time, cat_video + '_median', 0)  # 文件内容
     # print(text_time)
     save_execute_time(stats_time_path, text_time)  # 记录耗时
 
@@ -68,8 +69,9 @@ def gmm():
 
 
 if __name__ == '__main__':
-    ROOTPATH = '../../dataset'
-    algorithm_type = 'gmm_lr_def_kel=3_varT=def_iter=3'
+    # ROOTPATH = '../../dataset'
+    ROOTPATH = 'F:/Dataset/CDNet2014/dataset'
+    algorithm_type = 'gmm_lr_0.005_varT=def_kel=5'
     input_path_list = get_input_path(ROOTPATH)
     stats_time_path = '../../results_time/stats_time_{}.txt'.format(algorithm_type)
     processing_methods = [algorithm_type, 'morghology', 'median']

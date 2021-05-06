@@ -15,7 +15,6 @@ from pprint import pprint
 import cv2
 import numpy as np
 import pandas as pd
-from numba import njit, prange
 
 
 def get_temporalROI(roi_dir_path):
@@ -233,9 +232,10 @@ def stats(dataset_root, results_root, stats_root, sub_results_root):
 
 
 if __name__ == '__main__':
-    dataset_root = '../dataset'  # 数据集根目录
-    results_root = '../results'  # 检测结果根目录
-    stats_root = '../results_stats'  # 统计结果根目录
-    sub_results_root = 'gmm_lr=0.005'  # 要执行results_root文件夹下的哪个子文件夹, 为空时执行全部
+    dataset_root = 'F:/Dataset/CDNet2014/dataset'  # 数据集根目录
+    results_root = '../../results'  # 检测结果根目录
+    stats_root = '../../results_stats'  # 统计结果根目录
+    # 要执行results_root文件夹下的哪个子文件夹, 为空时执行全部
+    sub_results_root = 'gmm_lr_0.005_varT=def_kel=5'
 
     stats(dataset_root, results_root, stats_root, sub_results_root)

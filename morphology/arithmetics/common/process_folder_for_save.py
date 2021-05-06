@@ -26,7 +26,9 @@ def folder_for_save(input_path, algorithm_type, processing_methods):
     input_path_list = input_path.replace('\\', '/').split('/')
     output_path_list = input_path_list[:-1]  # 去掉input
     dataset_index = output_path_list.index('dataset')  # 获取 dataset 所在下标
-    output_path = list2path(output_path_list[:dataset_index])  # dataset 前的路径，目的是让results文件夹与dataset文件夹同级
+    # output_path = list2path(output_path_list[:dataset_index])  # dataset 前的路径，目的是让results文件夹与dataset文件夹同级
+    output_path = list2path(['..', '..'])
+    # output_path = ['..', '..']
     # 替换 dataset 为 results
     output_path_list[dataset_index] = 'results'
     # 替换第一个 baseline 为 algorithm_type

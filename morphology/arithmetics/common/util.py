@@ -32,7 +32,7 @@ def optimize_morghology(single_frame):
     :param single_frame:
     :return:
     """
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (3, 3))
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     frame_parsed = cv2.morphologyEx(single_frame, cv2.MORPH_OPEN, kernel, iterations=1)
     frame_parsed = cv2.morphologyEx(frame_parsed, cv2.MORPH_CLOSE, kernel, iterations=3)
 
@@ -47,7 +47,7 @@ def optimize_median(single_frame):
     :param single_frame:
     :return:
     """
-    blur = cv2.medianBlur(single_frame, 3)  # 中值滤波
+    blur = cv2.medianBlur(single_frame, 5)  # 中值滤波
     # thresh = cv2.threshold(blur, 127, 255, cv2.THRESH_BINARY)[1]  # 阈值处理
 
     return blur
