@@ -3,7 +3,7 @@
 """
 @author: sumex
 @software: PyCharm
-@time: 2021/4/20 10:00
+@time: 2021/5/9 13:37
 @file: stats.py
 @brief: 
 """
@@ -11,6 +11,7 @@ import csv
 import os
 import time
 from pprint import pprint
+import multiprocessing as mp
 
 import cv2
 import numpy as np
@@ -30,6 +31,19 @@ def get_temporalROI(roi_dir_path):
     return avail_frames.split(' ')
 
 
+def readimg(path, filename):
+    """
+    :param path:
+    :param filename:
+    :return:
+    """
+    file_path = os.path.join(path, filename)
+    img = cv2.imread(file_path, 0)
+    retval, thresh = cv2.threshold(img, 200, 255, cv2.THRESH_BINARY)  # 二值化
+
+    return thresh
+
+
 def load_img(path, start, end):
     """
     加载图片
@@ -41,11 +55,15 @@ def load_img(path, start, end):
     """
     image_set = []
     file_names = os.listdir(path)
+    pool = mp.Pool(int(mp.cpu_count()))
     for filename in file_names[start-1:end]:
-        file_path = os.path.join(path, filename)
-        img = cv2.imread(file_path, 0)
-        retval, thresh = cv2.threshold(img, 200, 255, cv2.THRESH_BINARY)  # 二值化
+        # 并行计算
+        thresh = pool.apply_async(readimg, (path, filename)).get()
         image_set.append(thresh)
+
+    pool.close()
+    pool.join()
+
     return image_set
 
 
@@ -87,9 +105,18 @@ def compare_with_groundtruth(y_true_path, y_pred_path):
     y_true_set = load_img(y_true_path, start_frame_id, end_frame_id)
     y_pred_set = load_img(y_pred_path, start_frame_id, end_frame_id)
 
+    # for i, y_true_frame in enumerate(y_true_set):
+    #     cm_frame = compute_cm(y_true_frame, y_pred_set[i])  # 每帧的混淆矩阵
+    #     cm += cm_frame
+
+    pool = mp.Pool(int(mp.cpu_count()))
     for i, y_true_frame in enumerate(y_true_set):
-        cm_frame = compute_cm(y_true_frame, y_pred_set[i])  # 每帧的混淆矩阵
+        # 并行计算
+        cm_frame = pool.apply_async(compute_cm, (y_true_frame, y_pred_set[i])).get()
         cm += cm_frame
+
+    pool.close()
+    pool.join()
 
     return cm
 
@@ -128,11 +155,12 @@ def get_stats(cm):
 
     stats_dic = {'Recall': round(recall, 4),
                  'Precision': round(precision, 4),
-                 'FMeasure': round(fmeasure, 4),
                  'Specificity': round(specficity, 4),
                  'FPR': round(fpr, 4),
                  'FNR': round(fnr, 4),
-                 'PWC': round(pbc, 4)}
+                 'PWC': round(pbc, 4),
+                 'FMeasure': round(fmeasure, 4),
+                 }
 
     return stats_dic
 
@@ -200,21 +228,21 @@ def csv_write(stats_root, filename, data):
         writer.writerows([data])  # 写入数据
 
 
-def stats(dataset_root, results_root, stats_root, sub_results_root):
-    if sub_results_root:
-        results_path = os.path.join(results_root, sub_results_root)
-    else:
-        # 批量统计
-        results_path = results_root
+def stats(dataset_root, results_root, stats_root):
+    # if sub_results_root:
+    #     results_path = os.path.join(results_root, sub_results_root)
+    # else:
+    #     # 批量统计
+    #     results_path = results_root
 
-    for dirpath, dirnames, filenames in os.walk(results_path):
+    for dirpath, dirnames, filenames in os.walk(results_root):
         if filenames:
             # print('filenames')  # 包含文件名称[列表形式]
-            print('当前正在执行：', dirpath)
+            print('正在计算评估指标：', dirpath)
             dirpath_list = dirpath.replace('\\', '/').split('/')  # 切割路径
             # algorithm_name_index = dirpath_list.index(sub_results_root)  # 获取文件名下标
-            algorithm_name_index = dirpath_list.index(os.path.basename(results_root)) + 1
-            algorithm_name_type = dirpath_list[algorithm_name_index:-2]  #
+            algorithm_name_index = dirpath_list.index(os.path.basename(results_root))
+            algorithm_name_type = set(dirpath_list[algorithm_name_index:-2])  #
             save_filename = '_'.join(algorithm_name_type)  # 保存stats时的文件名
             stats_index = '_'.join(dirpath_list[-2:])  # 保存时的索引名称
 
@@ -232,10 +260,9 @@ def stats(dataset_root, results_root, stats_root, sub_results_root):
 
 
 if __name__ == '__main__':
-    dataset_root = 'F:/Dataset/CDNet2014/dataset'  # 数据集根目录
-    results_root = '../../results'  # 检测结果根目录
+    dataset_root = 'F:/Dataset/CDNet2012/'  # 数据集根目录
+    results_root = '../../results/mb_t=t0.3'  # 检测结果根目录
     stats_root = '../../results_stats'  # 统计结果根目录
-    # 要执行results_root文件夹下的哪个子文件夹, 为空时执行全部
-    sub_results_root = 'gmm_lr_0.005_varT=def_kel=5'
+    # sub_results_root = 'mb'  # 要执行results_root文件夹下的哪个子文件夹, 为空时执行全部
 
-    stats(dataset_root, results_root, stats_root, sub_results_root)
+    stats(dataset_root, results_root, stats_root)

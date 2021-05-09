@@ -10,7 +10,7 @@
 import os
 import cv2
 
-from morphology.arithmetics.common.util import get_directories
+from morphology.arithmetics.common.folder_process import get_directories
 
 
 def load_data_set(path):
