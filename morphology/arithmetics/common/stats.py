@@ -242,7 +242,7 @@ def stats(dataset_root, results_root, stats_root):
             dirpath_list = dirpath.replace('\\', '/').split('/')  # 切割路径
             # algorithm_name_index = dirpath_list.index(sub_results_root)  # 获取文件名下标
             algorithm_name_index = dirpath_list.index(os.path.basename(results_root))
-            algorithm_name_type = set(dirpath_list[algorithm_name_index:-2])  #
+            algorithm_name_type = dirpath_list[algorithm_name_index:-2]  #
             save_filename = '_'.join(algorithm_name_type)  # 保存stats时的文件名
             stats_index = '_'.join(dirpath_list[-2:])  # 保存时的索引名称
 
