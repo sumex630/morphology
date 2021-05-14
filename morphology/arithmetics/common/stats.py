@@ -248,7 +248,12 @@ def stats(dataset_root, results_root, stats_root):
 
             dataset_video_path = os.path.join(dataset_root, dirpath_list[-2], dirpath_list[-2], dirpath_list[-1])  # 数据集的视频序列路径
             gt_path = os.path.join(dataset_video_path, 'groundtruth')  # 基准结果路径
-            confusion_matrix = compare_with_groundtruth(gt_path, dirpath)  # 计算混淆矩阵
+            try:
+                confusion_matrix = compare_with_groundtruth(gt_path, dirpath)  # 计算混淆矩阵
+            except Exception as e:
+                print(e)
+                continue
+            # confusion_matrix = compare_with_groundtruth(gt_path, dirpath)  # 计算混淆矩阵
             frames_stats = get_stats(confusion_matrix)  # 7中度量
             frames_info = get_video_info(dataset_video_path)  # 帧的相关信息
             frames_category = get_category_video(stats_index)  # 索引名
