@@ -21,7 +21,7 @@ import pandas as pd
 def get_temporalROI(roi_dir_path):
     """
     获取检测帧的范围
-    :param path:dataset/baseline/baseline/highway/groundtruth
+    :param roi_dir_path: dataset/baseline/baseline/highway
     :return:['470', '1700'] [起始帧，结束帧]
     """
     roi_path = os.path.join(roi_dir_path, 'temporalROI.txt')
@@ -31,7 +31,19 @@ def get_temporalROI(roi_dir_path):
     return avail_frames.split(' ')
 
 
-def readimg(path, filename):
+def read_regionROI(roi_dir_path):
+    """
+    获取感兴趣区域，去除非感兴趣区域
+    :param roi_dir_path: dataset/baseline/baseline/highway
+    :return: 二值化的帧，255为感兴趣区域，0为非感兴趣区域
+    """
+    roi_path = os.path.join(roi_dir_path, 'ROI.bmp')
+    roi_img = cv2.imread(roi_path, 0)
+
+    return roi_img
+
+
+def readimg(path, filename, roi):
     """
     :param path:
     :param filename:
@@ -40,11 +52,12 @@ def readimg(path, filename):
     file_path = os.path.join(path, filename)
     img = cv2.imread(file_path, 0)
     retval, thresh = cv2.threshold(img, 200, 255, cv2.THRESH_BINARY)  # 二值化
+    # thresh_roi = cv2.multiply(thresh, roi)  # 非感兴趣区域设为0
 
     return thresh
 
 
-def load_img(path, start, end):
+def load_img(path, start, end, roi):
     """
     加载图片
     :param start: 起始帧
@@ -58,7 +71,7 @@ def load_img(path, start, end):
     pool = mp.Pool(int(mp.cpu_count()))
     for filename in file_names[start-1:end]:
         # 并行计算
-        thresh = pool.apply_async(readimg, (path, filename)).get()
+        thresh = pool.apply_async(readimg, (path, filename, roi)).get()
         image_set.append(thresh)
 
     pool.close()
@@ -67,23 +80,25 @@ def load_img(path, start, end):
     return image_set
 
 
-def compute_cm(y_ture, y_pred):
+def compute_cm(y_ture, y_pred, img_roi):
     """
     计算每帧的混淆矩阵
     :param y_ture:
     :param y_pred:
     :return:
     """
-    ture_and_pred = cv2.bitwise_and(y_ture, y_pred)  # 与 -- TP（1 的个数）
-    ture_or_pred = cv2.bitwise_or(y_ture, y_pred)  # 或 -- TN （0 的个数）
-    ture_not = cv2.bitwise_not(y_ture)  # 对 y_ture 取非
-    ture_not_and_pred = cv2.bitwise_and(ture_not, y_pred)  # FP （1 的个数）
-    ture_not_or_pred = cv2.bitwise_or(ture_not, y_pred)  # FN （0 的个数）
+    outside_roi = (img_roi.reshape(-1) == 0).sum()  # 非感兴趣区域的像素点数 0
+
+    ture_and_pred = cv2.bitwise_and(y_ture, y_pred, mask=img_roi)  # 与 -- TP（1 的个数）
+    ture_or_pred = cv2.bitwise_or(y_ture, y_pred, mask=img_roi)  # 或 -- TN （0 的个数）
+    ture_not = cv2.bitwise_not(y_ture, mask=img_roi)  # 对 y_ture 取非
+    ture_not_and_pred = cv2.bitwise_and(ture_not, y_pred, mask=img_roi)  # FP （1 的个数）
+    ture_not_or_pred = cv2.bitwise_or(ture_not, y_pred, mask=img_roi)  # FN （0 的个数）
 
     tp = (ture_and_pred.reshape(-1) == 255).sum()
-    fn = (ture_not_or_pred.reshape(-1) == 0).sum()
+    fn = ((ture_not_or_pred.reshape(-1) == 0).sum()) - outside_roi
     fp = (ture_not_and_pred.reshape(-1) == 255).sum()
-    tn = (ture_or_pred.reshape(-1) == 0).sum()
+    tn = ((ture_or_pred.reshape(-1) == 0).sum()) - outside_roi
 
     return [tp, fn, fp, tn]
 
@@ -100,10 +115,10 @@ def compare_with_groundtruth(y_true_path, y_pred_path):
     vaild_frames = get_temporalROI(roi_dir_path)  # 评估帧范围
     start_frame_id = int(vaild_frames[0])  # 起始帧号
     end_frame_id = int(vaild_frames[1])  # 结束帧号
-    # print("start_frame_id", start_frame_id, end_frame_id)
+    roi = read_regionROI(roi_dir_path)  # roi 区域
 
-    y_true_set = load_img(y_true_path, start_frame_id, end_frame_id)
-    y_pred_set = load_img(y_pred_path, start_frame_id, end_frame_id)
+    y_true_set = load_img(y_true_path, start_frame_id, end_frame_id, roi)
+    y_pred_set = load_img(y_pred_path, start_frame_id, end_frame_id, roi)
 
     # for i, y_true_frame in enumerate(y_true_set):
     #     cm_frame = compute_cm(y_true_frame, y_pred_set[i])  # 每帧的混淆矩阵
@@ -112,7 +127,7 @@ def compare_with_groundtruth(y_true_path, y_pred_path):
     pool = mp.Pool(int(mp.cpu_count()))
     for i, y_true_frame in enumerate(y_true_set):
         # 并行计算
-        cm_frame = pool.apply_async(compute_cm, (y_true_frame, y_pred_set[i])).get()
+        cm_frame = pool.apply_async(compute_cm, (y_true_frame, y_pred_set[i], roi)).get()
         cm += cm_frame
 
     pool.close()
@@ -236,7 +251,7 @@ def stats(dataset_root, results_root, stats_root):
     #     results_path = results_root
 
     for dirpath, dirnames, filenames in os.walk(results_root):
-        if filenames:
+        if filenames:  #  and 'boats' in dirpath
             # print('filenames')  # 包含文件名称[列表形式]
             print('正在计算评估指标：', dirpath)
             dirpath_list = dirpath.replace('\\', '/').split('/')  # 切割路径
@@ -246,14 +261,15 @@ def stats(dataset_root, results_root, stats_root):
             save_filename = '_'.join(algorithm_name_type)  # 保存stats时的文件名
             stats_index = '_'.join(dirpath_list[-2:])  # 保存时的索引名称
 
-            dataset_video_path = os.path.join(dataset_root, dirpath_list[-2], dirpath_list[-2], dirpath_list[-1])  # 数据集的视频序列路径
-            gt_path = os.path.join(dataset_video_path, 'groundtruth')  # 基准结果路径
-            try:
+            # 数据集的视频序列路径
+            dataset_video_path = os.path.join(dataset_root, dirpath_list[-2], dirpath_list[-2], dirpath_list[-1])
+            # 基准结果路径
+            gt_path = os.path.join(dataset_video_path, 'groundtruth')
+            try:  # 避免检测结果中的图像数量与基准结果中的图像数量不一致，而导致程序中断
                 confusion_matrix = compare_with_groundtruth(gt_path, dirpath)  # 计算混淆矩阵
             except Exception as e:
                 print(e)
                 continue
-            # confusion_matrix = compare_with_groundtruth(gt_path, dirpath)  # 计算混淆矩阵
             frames_stats = get_stats(confusion_matrix)  # 7中度量
             frames_info = get_video_info(dataset_video_path)  # 帧的相关信息
             frames_category = get_category_video(stats_index)  # 索引名
@@ -266,8 +282,8 @@ def stats(dataset_root, results_root, stats_root):
 
 if __name__ == '__main__':
     dataset_root = 'F:/Dataset/CDNet2012/'  # 数据集根目录
-    results_root = '../../results/mb_t=t0.3'  # 检测结果根目录
-    stats_root = '../../results_stats'  # 统计结果根目录
+    results_root = '../../../results/gmm_default'  # 检测结果根目录
+    stats_root = '../../../results_stats/add_roi'  # 统计结果根目录
     # sub_results_root = 'mb'  # 要执行results_root文件夹下的哪个子文件夹, 为空时执行全部
 
     stats(dataset_root, results_root, stats_root)
