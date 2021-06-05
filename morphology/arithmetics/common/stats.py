@@ -5,7 +5,7 @@
 @software: PyCharm
 @time: 2021/5/9 13:37
 @file: stats.py
-@brief: 
+@brief:
 """
 import csv
 import os
@@ -54,7 +54,12 @@ def readimg(path, filename, roi):
     retval, thresh = cv2.threshold(img, 200, 255, cv2.THRESH_BINARY)  # 二值化
     # thresh_roi = cv2.multiply(thresh, roi)  # 非感兴趣区域设为0
 
-    return thresh
+    sum_img_170 = (img.reshape(-1) == 170).sum()  # 非感兴趣区域
+    sum_img = img.shape[0] * img.shape[1]
+    if sum_img_170 == sum_img:
+        return filename, True
+
+    return thresh, False
 
 
 def load_img(path, start, end, roi):
@@ -71,13 +76,18 @@ def load_img(path, start, end, roi):
     pool = mp.Pool(int(mp.cpu_count()))
     for filename in file_names[start-1:end]:
         # 并行计算
-        thresh = pool.apply_async(readimg, (path, filename, roi)).get()
+        thresh, flag = pool.apply_async(readimg, (path, filename, roi)).get()
+
+        if flag:
+            return image_set, thresh
+            # break
+
         image_set.append(thresh)
 
     pool.close()
     pool.join()
 
-    return image_set
+    return image_set, ''
 
 
 def compute_cm(y_ture, y_pred, img_roi):
@@ -87,6 +97,9 @@ def compute_cm(y_ture, y_pred, img_roi):
     :param y_pred:
     :return:
     """
+    if img_roi.shape != y_ture.shape:  # 给的标准有问题  traffic序列  .bmp
+        img_roi = cv2.resize(img_roi, y_ture.shape[::-1])
+
     outside_roi = (img_roi.reshape(-1) == 0).sum()  # 非感兴趣区域的像素点数 0
 
     ture_and_pred = cv2.bitwise_and(y_ture, y_pred, mask=img_roi)  # 与 -- TP（1 的个数）
@@ -117,8 +130,16 @@ def compare_with_groundtruth(y_true_path, y_pred_path):
     end_frame_id = int(vaild_frames[1])  # 结束帧号
     roi = read_regionROI(roi_dir_path)  # roi 区域
 
-    y_true_set = load_img(y_true_path, start_frame_id, end_frame_id, roi)
-    y_pred_set = load_img(y_pred_path, start_frame_id, end_frame_id, roi)
+    y_true_set, filename = load_img(y_true_path, start_frame_id, end_frame_id, roi)
+
+    if 'gt' in filename:
+        end_frame_id = int("".join(list(filter(str.isdigit, filename)))) - 1
+
+    y_pred_set, filename = load_img(y_pred_path, start_frame_id, end_frame_id, roi)
+
+    # print(end_frame_id)
+    # print(len(y_true_set))
+    # print(len(y_pred_set))
 
     # for i, y_true_frame in enumerate(y_true_set):
     #     cm_frame = compute_cm(y_true_frame, y_pred_set[i])  # 每帧的混淆矩阵
@@ -251,7 +272,7 @@ def stats(dataset_root, results_root, stats_root):
     #     results_path = results_root
 
     for dirpath, dirnames, filenames in os.walk(results_root):
-        if filenames:  #  and 'boats' in dirpath
+        if filenames:  #  and 'boats' in dirpath  corridor traffic
             # print('filenames')  # 包含文件名称[列表形式]
             print('正在计算评估指标：', dirpath)
             dirpath_list = dirpath.replace('\\', '/').split('/')  # 切割路径
@@ -282,8 +303,9 @@ def stats(dataset_root, results_root, stats_root):
 
 if __name__ == '__main__':
     dataset_root = 'F:/Dataset/CDNet2012/'  # 数据集根目录
-    results_root = '../../../results/gmm_default'  # 检测结果根目录
-    stats_root = '../../../results_stats/add_roi'  # 统计结果根目录
+    # dataset_root = 'F:\Dataset\CDNet2014\dataset'  # 数据集根目录
+    results_root = '../results/yolact_diff_'  # 检测结果根目录
+    stats_root = '../results_stats'  # 统计结果根目录
     # sub_results_root = 'mb'  # 要执行results_root文件夹下的哪个子文件夹, 为空时执行全部
 
     stats(dataset_root, results_root, stats_root)
